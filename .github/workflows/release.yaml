@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: ["Test"]
+    branches: [master, beta]
+    types:
+      - completed
+
+env:
+    PROJECT_ID: earthbook2
+    REGION: asia-east1
+    GAR_LOCATION: asia-east1-docker.pkg.dev/earthbook2/demo-docker-registry/ggw/gitbook-cookbook
+
+
+jobs:
+  release:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: release
+      cancel-in-progress: true
+    permissions:
+      id-token: write
+      contents: write
+
+    outputs:
+      released: ${{ steps.semantic.outputs.released }}
+      version: ${{ steps.semantic.outputs.version }}
+      tag: ${{ steps.semantic.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Python Semantic Release
+        id: semantic
+        uses: python-semantic-release/python-semantic-release@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN  }}
+
+      - name: Check release
+        if: steps.semantic.outputs.released == 'true'
+        run: |
+          echo "Release was successful. Version: ${{ steps.semantic.outputs.version }}, Tag: ${{ steps.semantic.outputs.tag }}"
+
+  build-and-push-to-gar:
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    runs-on: ubuntu-latest
+    steps:
+    - name: "Checkout"
+      uses: "actions/checkout@v4"
+      with:
+        fetch-depth: 0
+
+    - name: "Checkout master or beta"
+      run: |
+        git fetch origin
+        git checkout master || git checkout beta
+
+
+    - name: "auth"
+      uses: "google-github-actions/auth@v1"
+      with:
+            credentials_json: "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}"
+
+    - name: "Set up Cloud SDK"
+      uses: "google-github-actions/setup-gcloud@v1"
+
+    - name: "Use gcloud CLI"
+      run: "gcloud info"
+
+    - name: "Docker auth"
+      run: |-
+        gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+
+    - name: Build and Push Image
+      run: |
+          docker build . --file Dockerfile --tag ${{ env.GAR_LOCATION }}:${{ needs.release.outputs.version }} --tag ${{ env.GAR_LOCATION }}:latest
+          docker push ${{ env.GAR_LOCATION }}:${{ needs.release.outputs.version }}
+          docker push ${{ env.GAR_LOCATION }}:latest
