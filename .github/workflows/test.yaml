@@ -1,0 +1,25 @@
+name: Test
+
+on:
+  push:
+      branches:
+      - master
+      - beta
+      - develop
+      - feat/*
+      - fix/*
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # Service containers to run with `container-job`
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-environment
+        with:
+          mode: test
+
+      - name: Run Unit Tests
+        run: |
+          pdm run pytest -v -s -p no:warnings
