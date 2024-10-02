@@ -18,3 +18,7 @@ def health():
 
 
 
+@app.get("/version")
+def version():
+    return {"version": __VERSION__}
+
