@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## v0.3.0 (2024-10-02)
+
+### Unknown
+
+* Merge pull request #3 from GGGoingdown/doc
+
+Doc ([`dd56150`](https://github.com/GGGoingdown/Gitbook-Cookbook/commit/dd56150baa45f408c5fd303a71fb814a6e18edba))
+
+* GITBOOK-1: No subject ([`98372c3`](https://github.com/GGGoingdown/Gitbook-Cookbook/commit/98372c3d729bba36a5b2b97c39c747e3176158c8))
+
+* GitBook: No commit message ([`db6d117`](https://github.com/GGGoingdown/Gitbook-Cookbook/commit/db6d1177612ae2186d69b22b85723bf4c7052efe))
+
 ## v0.3.0-beta.1 (2024-10-02)
 
 ### Feature
