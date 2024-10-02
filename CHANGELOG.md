@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## v0.3.0-beta.1 (2024-10-02)
+
+### Feature
+
+* feat: add echo api ([`371214f`](https://github.com/GGGoingdown/Gitbook-Cookbook/commit/371214f433339f1488dbc9200859c4aee6606c46))
+
 ## v0.2.0 (2024-10-02)
 
 ### Unknown

@@ -17,6 +17,10 @@ def health():
     return {"status": "ok"}
 
 
+@app.post("/echo")
+def echo(data: dict):
+    return data
+
 
 @app.get("/version")
 def version():
