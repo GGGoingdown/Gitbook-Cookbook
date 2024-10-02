@@ -8,10 +8,9 @@ on:
       - completed
 
 env:
-    PROJECT_ID: earthbook2
-    REGION: asia-east1
-    GAR_LOCATION: asia-east1-docker.pkg.dev/earthbook2/demo-docker-registry/ggw/gitbook-cookbook
-
+  PROJECT_ID: earthbook2
+  REGION: asia-east1
+  GAR_LOCATION: asia-east1-docker.pkg.dev/earthbook2/demo-docker-registry/ggw/gitbook-cookbook
 
 jobs:
   release:
@@ -32,6 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 0
 
       - name: Python Semantic Release
@@ -39,7 +39,7 @@ jobs:
         uses: python-semantic-release/python-semantic-release@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN  }}
-          directory: './'  # 确保这是正确的相对路径
+          directory: "./" # 确保这是正确的相对路径
 
       - name: Check release
         if: steps.semantic.outputs.released == 'true'
@@ -51,35 +51,29 @@ jobs:
     if: needs.release.outputs.released == 'true'
     runs-on: ubuntu-latest
     steps:
-    - name: "Checkout"
-      uses: "actions/checkout@v4"
-      with:
-        fetch-depth: 0
+      - name: "Checkout"
+        uses: "actions/checkout@v4"
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+          fetch-depth: 0
 
-    - name: "Checkout master or beta"
-      run: |
-        git fetch origin
-        git checkout master || git checkout beta
+      - name: "auth"
+        uses: "google-github-actions/auth@v1"
+        with:
+          credentials_json: "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}"
 
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v1"
 
-    - name: "auth"
-      uses: "google-github-actions/auth@v1"
-      with:
-            credentials_json: "${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}"
+      - name: "Use gcloud CLI"
+        run: "gcloud info"
 
-    - name: "Set up Cloud SDK"
-      uses: "google-github-actions/setup-gcloud@v1"
+      - name: "Docker auth"
+        run: |-
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 
-    - name: "Use gcloud CLI"
-      run: "gcloud info"
-
-    - name: "Docker auth"
-      run: |-
-        gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
-
-
-    - name: Build and Push Image
-      run: |
+      - name: Build and Push Image
+        run: |
           docker build . --file Dockerfile --tag ${{ env.GAR_LOCATION }}:${{ needs.release.outputs.version }} --tag ${{ env.GAR_LOCATION }}:latest
           docker push ${{ env.GAR_LOCATION }}:${{ needs.release.outputs.version }}
           docker push ${{ env.GAR_LOCATION }}:latest
